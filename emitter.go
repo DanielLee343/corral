@@ -1,6 +1,7 @@
 package corral
 
 import (
+	"container/list"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/bcongdon/corral/internal/pkg/corfs"
+	"github.com/integralist/go-elasticache/elasticache"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -58,24 +60,29 @@ func (e *reducerEmitter) bytesWritten() int64 {
 // mapperEmitter maintains a map of writers. Keys are partitioned into one of numBins
 // intermediate "shuffle" bins. Each bin is written as a separate file.
 type mapperEmitter struct {
-	numBins       uint                    // number of intermediate shuffle bins
-	writers       map[uint]io.WriteCloser // maps a parition number to an open writer
-	fs            corfs.FileSystem        // filesystem to use when opening writers
-	mapperID      uint                    // numeric identifier of the mapper using this emitter
-	outDir        string                  // folder to save map output to
-	partitionFunc PartitionFunc           // PartitionFunc to use when partitioning map output keys into intermediate bins
-	writtenBytes  int64                   // counter for number of bytes written from emitted key/val pairs
+	numBins        uint                    // number of intermediate shuffle bins
+	writers        map[uint]io.WriteCloser // maps a parition number to an open writer
+	fs             corfs.FileSystem        // filesystem to use when opening writers
+	mapperID       uint                    // numeric identifier of the mapper using this emitter
+	outDir         string                  // folder to save map output to
+	partitionFunc  PartitionFunc           // PartitionFunc to use when partitioning map output keys into intermediate bins
+	writtenBytes   int64                   // counter for number of bytes written from emitted key/val pairs
+	elasticacheObj *elasticache.Client     // elasticache client object
+	fileName2List  *map[string]list.List
 }
 
 // Initializes a new mapperEmitter
-func newMapperEmitter(numBins uint, mapperID uint, outDir string, fs corfs.FileSystem) mapperEmitter {
+func newMapperEmitter(numBins uint, mapperID uint, outDir string, fs corfs.FileSystem,
+	elasticacheObj *elasticache.Client, fileName2List *map[string]list.List) mapperEmitter {
 	return mapperEmitter{
-		numBins:       numBins,
-		writers:       make(map[uint]io.WriteCloser, numBins),
-		fs:            fs,
-		mapperID:      mapperID,
-		outDir:        outDir,
-		partitionFunc: hashPartition,
+		numBins:        numBins,
+		writers:        make(map[uint]io.WriteCloser, numBins),
+		fs:             fs,
+		mapperID:       mapperID,
+		outDir:         outDir,
+		partitionFunc:  hashPartition,
+		elasticacheObj: elasticacheObj,
+		fileName2List:  fileName2List,
 	}
 }
 
@@ -95,7 +102,9 @@ func (me *mapperEmitter) Emit(key, value string) error {
 	if !exists {
 		var err error
 		path := me.fs.Join(me.outDir, fmt.Sprintf("map-bin%d-%d.out", bin, me.mapperID))
-
+		l := list.New()
+		l.PushBack(1)
+		// me.fileName2List[path] = l
 		writer, err = me.fs.OpenWriter(path)
 		if err != nil {
 			return err

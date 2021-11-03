@@ -5,8 +5,11 @@ go 1.16
 require (
 	github.com/aws/aws-lambda-go v1.24.0
 	github.com/aws/aws-sdk-go v1.38.45
+	github.com/bradfitz/gomemcache v0.0.0-20190913173617-a41fca850d0b // indirect
 	github.com/dustin/go-humanize v1.0.0
 	github.com/hashicorp/golang-lru v0.5.4
+	github.com/integralist/go-elasticache v0.0.0-20190122104721-fb0aee05cd4e // indirect
+	github.com/integralist/go-findroot v0.0.0-20160518114804-ac90681525dc // indirect
 	github.com/mattetti/filebuffer v1.0.1
 	github.com/mattn/go-runewidth v0.0.12 // indirect
 	github.com/sirupsen/logrus v1.8.1

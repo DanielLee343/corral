@@ -2,6 +2,7 @@ package corral
 
 import (
 	"bufio"
+	"container/list"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/bcongdon/corral/internal/pkg/corfs"
 	humanize "github.com/dustin/go-humanize"
+	"github.com/integralist/go-elasticache/elasticache"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sync/semaphore"
 )
@@ -26,13 +28,16 @@ type Job struct {
 	intermediateBins uint
 	outputPath       string
 
-	bytesRead    int64
-	bytesWritten int64
+	bytesRead      int64
+	bytesWritten   int64
+	elasticacheObj *elasticache.Client
+	fileName2List  *map[string]list.List
 }
 
 // Logic for running a single map task
 func (j *Job) runMapper(mapperID uint, splits []inputSplit) error {
-	emitter := newMapperEmitter(j.intermediateBins, mapperID, j.outputPath, j.fileSystem)
+	emitter := newMapperEmitter(j.intermediateBins, mapperID, j.outputPath, j.fileSystem,
+		j.elasticacheObj, j.fileName2List)
 	if j.PartitionFunc != nil {
 		emitter.partitionFunc = j.PartitionFunc
 	}

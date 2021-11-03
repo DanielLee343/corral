@@ -43,5 +43,6 @@ func main() {
 	}
 
 	driver := corral.NewDriver(job, options...)
+
 	driver.Main()
 }

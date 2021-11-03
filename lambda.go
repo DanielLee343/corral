@@ -1,6 +1,7 @@
 package corral
 
 import (
+	"container/list"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -15,6 +16,7 @@ import (
 	"github.com/bcongdon/corral/internal/pkg/corfs"
 	"github.com/bcongdon/corral/internal/pkg/coriam"
 	"github.com/bcongdon/corral/internal/pkg/corlambda"
+	"github.com/integralist/go-elasticache/elasticache"
 )
 
 var (
@@ -48,6 +50,15 @@ func prepareResult(job *Job) string {
 func handleRequest(ctx context.Context, task task) (string, error) {
 	// Precaution to avoid running out of memory for reused Lambdas
 	debug.FreeOSMemory()
+	// log.Info("enter here11111")
+	os.Setenv("ELASTICACHE_ENDPOINT", "clusterforlambdatest.ppesh4.0001.use1.cache.amazonaws.com:11211")
+	elasticacheObj, err := elasticache.New()
+	if err != nil {
+		log.Fatalf("Error: %s", err.Error())
+	}
+	// log.Info("enter here22222")
+	var fileName2List map[string]list.List
+	fileName2List = make(map[string]list.List)
 
 	// Setup current job
 	fs := corfs.InitFilesystem(task.FileSystemType)
@@ -56,6 +67,8 @@ func handleRequest(ctx context.Context, task task) (string, error) {
 	currentJob.intermediateBins = task.IntermediateBins
 	currentJob.outputPath = task.WorkingLocation
 	currentJob.config.Cleanup = task.Cleanup
+	currentJob.elasticacheObj = elasticacheObj
+	currentJob.fileName2List = &fileName2List
 
 	// Need to reset job counters in case this is a reused lambda
 	currentJob.bytesRead = 0

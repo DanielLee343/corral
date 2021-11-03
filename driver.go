@@ -191,8 +191,11 @@ func (d *Driver) runReducePhase(job *Job, jobNumber int) {
 // run starts the Driver
 func (d *Driver) run() {
 	if runningInLambda() {
+		// fmt.Println("***********")
 		lambdaDriver = d
 		lambda.Start(handleRequest)
+		// fmt.Println("-----------")
+		// return
 	}
 	//deploy lambda functions
 	if lBackend, ok := d.executor.(*lambdaExecutor); ok {
