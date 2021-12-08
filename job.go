@@ -103,7 +103,7 @@ func (j *Job) runMapperSplit(split inputSplit, emitter Emitter) error {
 // Logic for running a single reduce task
 func (j *Job) runReducer(binID uint) error {
 	// Determine the intermediate data files this reducer is responsible for
-	intDir := "/mnt/pmem-test/amplab1/intm/"
+	intDir := "/mnt/pmem-test/amplab2/intm/"
 	path := j.fileSystem.Join(intDir, fmt.Sprintf("map-bin%d-*", binID))
 	files, err := j.fileSystem.ListFiles(path)
 	if err != nil {
